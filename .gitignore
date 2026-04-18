@@ -1,0 +1,15 @@
+# IDE files
+.vscode/
+.idea/
+
+# Java compiled files
+*.class
+bin/
+out/
+target/
+
+# Environment files (VERY IMPORTANT)
+.env
+
+# Logs
+*.log 
