@@ -11,25 +11,44 @@ $error_message = "";
 $success_message = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student'])) {
-    $name = $_POST['name'];
+    $name = trim($_POST['name']);
     $class_id = $_POST['class'];  // Ensure variable name matches form input
     $fee_status = $_POST['fee_status'] ?? 'unpaid'; // Default to 'unpaid'
 
-    // Correct SQL syntax
-    $sql = "INSERT INTO students (name, class_id, fee_status) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-
-    // Verify that the statement was prepared successfully
-    if ($stmt) {
-        $stmt->bind_param("sss", $name, $class_id, $fee_status);
-        if ($stmt->execute()) {
-            $success_message = "Student added successfully!";
-        } else {
-            $error_message = "Error: " . $stmt->error;
-        }
-        $stmt->close(); // Close the statement to free resources
+    // Validate inputs
+    if (empty($name)) {
+        $error_message = "Student name is required.";
+    } elseif (empty($class_id)) {
+        $error_message = "Class selection is required.";
     } else {
-        $error_message = "Error preparing statement: " . $conn->error;
+        // Check if class exists in database
+        $class_check_sql = "SELECT id FROM classes WHERE id = ?";
+        $class_check_stmt = $conn->prepare($class_check_sql);
+        $class_check_stmt->bind_param("i", $class_id);
+        $class_check_stmt->execute();
+        $class_result = $class_check_stmt->get_result();
+        
+        if ($class_result->num_rows === 0) {
+            $error_message = "Selected class does not exist. Please select a valid class.";
+        } else {
+            // Correct SQL syntax
+            $sql = "INSERT INTO students (name, class_id, fee_status) VALUES (?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+    
+            // Verify that the statement was prepared successfully
+            if ($stmt) {
+                $stmt->bind_param("sis", $name, $class_id, $fee_status);
+                if ($stmt->execute()) {
+                    $success_message = "Student added successfully!";
+                } else {
+                    $error_message = "Error: " . $stmt->error;
+                }
+                $stmt->close(); // Close the statement to free resources
+            } else {
+                $error_message = "Error preparing statement: " . $conn->error;
+            }
+        }
+        $class_check_stmt->close();
     }
 }
 

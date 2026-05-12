@@ -3,25 +3,14 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Check if the user is logged in
+// Check if user is logged in
 if (!isset($_SESSION['loggedin']) || !$_SESSION['loggedin']) {
-    // Redirect to login page if not logged in
-    header("Location: login.php"); // Replace login.php with your actual login page
-    exit; // Stop script execution
+    header("Location: login.php");
+    exit();
 }
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$database = "maluti_primary_school";
-
-// Create database connection
-$conn = new mysqli($servername, $username, $password, $database);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Include database connection
+require 'db.php';
 
 // Fetch logged-in user's role and ID
 $user_role = $_SESSION['role'];
@@ -52,14 +41,12 @@ if ($user_role === 'admin' || $user_role === 'teacher') {
     $stmt->close();
 
 } elseif ($user_role === 'parent') {
-    // For parent, fetch only the children linked to this parent
-    // This query uses the parent_child_relationship table and links to the users table by its primary key 'id'
+    // For parent, fetch only children linked to this parent
     $sql = "
         SELECT s.id, s.name
         FROM students s
         JOIN parent_child_relationship pcr ON s.id = pcr.child_id
-        JOIN users u ON pcr.parent_id = u.id -- Corrected: Linking parent_id to users.id
-        WHERE u.id = ? -- Corrected: Filtering by users.id
+        WHERE pcr.parent_id = ?
         ORDER BY s.name ASC";
 
     $stmt = $conn->prepare($sql);
@@ -68,8 +55,6 @@ if ($user_role === 'admin' || $user_role === 'teacher') {
         die("SQL statement preparation failed (Parent): " . $conn->error);
     }
 
-    // Bind the logged-in parent's user_id (which should be the 'id' from the users table)
-    // Assuming user_id is an integer, adjust 'i' if it's a different type
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $students_result = $stmt->get_result();
@@ -85,7 +70,6 @@ if ($user_role === 'admin' || $user_role === 'teacher') {
     // Handle other roles or users without a defined role appropriately
     die("Access denied: Your role is not authorized to view this page.");
 }
-
 
 // Initialize report card and attendance data arrays
 $report_card = [];
@@ -191,92 +175,129 @@ $conn->close();
     <style>
         body {
             font-family: Arial, sans-serif;
+            padding: 20px;
             background-color: #f4f4f4;
-            padding: 20px;
+            background-image: url('images/background2.png'); 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
         }
-        .report-card-container { /* Changed class name for clarity */
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
-            margin: 20px auto;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         h2, h3 {
             text-align: center;
-            color: #333;
+            color: #5cb85c;
+            margin-bottom: 20px;
         }
-         h2 {
-             margin-bottom: 20px; /* Add some space below the main heading */
-         }
+        .student-name-heading {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #0056b3;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         th, td {
             padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #eee;
         }
         th {
             background-color: #5cb85c;
             color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        form {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        form label {
-            margin-right: 10px;
             font-weight: bold;
         }
-        form select, form button {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
         }
-         form button {
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        form {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        form label {
+            font-weight: bold;
+            color: #333;
+        }
+        form select, form button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        form select {
+            min-width: 200px;
+        }
+        form button {
             background-color: #5cb85c;
             color: white;
             cursor: pointer;
             border: none;
-             transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease;
         }
-         form button:hover {
+        form button:hover {
             background-color: #4cae4c;
         }
         .no-data {
-             text-align: center;
-             margin-top: 20px;
-             color: #555;
-         }
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: #666;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .section-divider {
+            margin: 30px 0;
+            padding: 20px 0;
+            border-top: 2px solid #5cb85c;
+        }
         .back-link {
-            display: block;
+            display: inline-block;
             text-align: center;
             margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #5cb85c;
+            color: white;
             text-decoration: none;
-            color: #5cb85c;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
-         .back-link:hover {
-             text-decoration: underline;
-         }
-         .section-divider {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-         }
-         .student-name-heading {
-             text-align: center;
-             margin-top: 20px;
-             margin-bottom: 20px;
-             color: #0056b3; /* A different color to highlight the student's name */
-         }
+        .back-link:hover {
+            background-color: #4cae4c;
+            text-decoration: none;
+        }
+        .nav-links {
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
     <script>
         function validateForm() {
@@ -292,9 +313,10 @@ $conn->close();
     </script>
 </head>
 <body>
-    <div class="report-card-container"> <!-- Use the new class name -->
+    <div class="container">
         <h2>Select a Student to Generate Report Card and Attendance</h2>
-        <form method="post" onsubmit="return validateForm();">
+        <div class="form-section">
+            <form method="post" onsubmit="return validateForm();">
             <label for="student_id">Select Student:</label>
             <select name="student_id" id="student_id" required>
                 <option value="">-- Choose a student --</option>
@@ -317,6 +339,7 @@ $conn->close();
             </select>
             <button type="submit">Generate Report Card & Attendance</button>
         </form>
+        </div>
 
         <?php
         // Only display results if a student has been selected and authorized
@@ -383,6 +406,8 @@ $conn->close();
         endif;
         ?>
     </div>
-    <a href="dashboard.php" class="back-link">Back to Dashboard</a>
+    <div class="nav-links">
+        <a href="dashboard.php" class="back-link">Back to Dashboard</a>
+    </div>
 </body>
 </html>

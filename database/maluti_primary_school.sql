@@ -325,7 +325,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `role`) VALUES
 (5, '12345', '$2y$10$/Su43r1kxe7e9TZIowkz6.TNHGJnq.D2QN4T.nZMNslgSNfFlriu.', 'teacher'),
 (7, 'king', '$2y$10$qAFfQKov7RV5YvGSXZ06Me0KyzvVejqo5tkmae0ez1Gzuwwt1PyWy', 'student'),
 (11, 'teacher', '$2y$10$gUsKneIBD5AxSJhUbonQBOY87LDIedY4ieGx2aIbO6QCZS2SugBFO', 'teacher'),
-(13, 'admin', '$2y$10$9F7XC1oHvu4C4B9HWow3xuFDIxXyb0jvNkj0JkSlZmPQhtm23J54K', 'admin'),
+(13, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
 (14, 'kakapa', '$2y$10$AnV8pH3PiNeMpA1kHF7P7eIebHDt2hVpi6y.kKOLU.bSBLTVE6u8e', 'teacher'),
 (15, 'parent', '$2y$10$rM1ST.RmqOnbe0YNfIVrR.Ro4sO1am4RPJ8zcIyqvkEtwSXfYbgkC', 'parent'),
 (17, 'seaya', '$2y$10$WCiekBNvcIIgc90TNSeSYOGMyZQiqnHVwSabVUx7RA7xPUJl2fJey', 'student'),

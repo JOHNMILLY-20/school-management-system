@@ -3,18 +3,8 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Database connection setup
-$servername = "localhost";
-$username = "root";
-$password = ""; // Your database password
-$database = "maluti_primary_school"; // Your database name
-
-$conn = new mysqli($servername, $username, $password, $database);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Include database connection
+require 'db.php';
 
 // Initialize variables for handling messages
 $error_message = "";
@@ -57,38 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $stmt->close();
 }
 
-// Handle password change
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
-    $username = $_POST['username'];
-    $new_password = $_POST['new_password'];
-
-    // Check if username exists
-    $sql = "SELECT id FROM users WHERE username = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        // Username exists, update password
-        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-        $update_sql = "UPDATE users SET password = ? WHERE username = ?";
-        $update_stmt = $conn->prepare($update_sql);
-        $update_stmt->bind_param("ss", $hashed_password, $username);
-
-        if ($update_stmt->execute()) {
-            $success_message = "Password updated successfully!";
-        } else {
-            $error_message = "Error updating password: " . $update_stmt->error;
-        }
-
-        $update_stmt->close();
-    } else {
-        $error_message = "No user found with that username!";
-    }
-
-    $stmt->close();
-}
 
 $conn->close();
 ?>
@@ -100,77 +58,91 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <style>
-        /* Main body styles */
         body {
             font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+            background-image: url('images/background2.png'); 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0; /* Reset margins */
-            position: relative; /* Allow absolute positioning of children */
         }
-        .background-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: -1; /* Place the background behind the content */
-            opacity: 0.5; /* Makes the image semi-transparent */
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        .login-container {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-            z-index: 1; /* Place the form above the background */
-            margin-top: 50px; /* Add margin to move the container lower */
-        }
-        h2 {
+        h1, h2 {
+            text-align: center;
+            color: #5cb85c;
             margin-bottom: 20px;
+        }
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            border: 1px solid red;
+            background-color: #ffe6e6;
+        }
+        .success {
+            color: green;
+            border: 1px solid green;
+            background-color: #e6ffe6;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin: 10px 0 5px;
+            font-weight: bold;
         }
         input[type="text"], input[type="password"] {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
-            border-radius: 3px;
+            border-radius: 4px;
+            box-sizing: border-box;
         }
-        input[type="submit"] {
+        button {
+            padding: 12px 20px;
             background-color: #5cb85c;
             color: white;
             border: none;
-            padding: 10px;
-            border-radius: 3px;
+            border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s;
             width: 100%;
+            font-size: 16px;
         }
-        input[type="submit"]:hover {
+        button:hover {
             background-color: #4cae4c;
         }
-        .error {
-            color: red;
-            margin-bottom: 10px;
-        }
-        .success {
-            color: green;
-            margin-bottom: 10px;
-        }
         .links {
-            margin-top: 15px;
             text-align: center;
+            margin-top: 20px;
         }
         .links a {
-            display: block;
-            margin: 5px 0;
             color: #007bff;
             text-decoration: none;
+            font-weight: bold;
         }
         .links a:hover {
             text-decoration: underline;
@@ -178,36 +150,59 @@ $conn->close();
     </style>
 </head>
 <body>
-    <img src="images/login.png" alt="Background Image" class="background-image" />
-    
-    <div class="login-container">
-        <h2>Login</h2>
-        <?php if (!empty($error_message)) { echo "<div class='error'>{$error_message}</div>"; } ?>
-        <?php if (!empty($success_message)) { echo "<div class='success'>{$success_message}</div>"; } ?>
-        <form method="POST" action="">
-            <label for="username">Username:</label>
-            <input type="text" name="username" required>
-            <br>
-            <label for="password">Password:</label>
-            <input type="password" name="password" required>
-            <br>
-            <input type="submit" name="login" value="Login">
-        </form>
+    <div class="container">
+        <h1>Maluti Primary School</h1>
+        
+        <div class="form-section">
+            <h2>Login</h2>
+            <?php if (!empty($error_message)): ?>
+                <div class="message error"><?= htmlspecialchars($error_message); ?></div>
+            <?php endif; ?>
+            <?php if (!empty($success_message)): ?>
+                <div class="message success"><?= htmlspecialchars($success_message); ?></div>
+            <?php endif; ?>
+            <form method="POST" action="">
+                <label for="login_username">Username:</label>
+                <input type="text" id="login_username" name="username" required>
+                
+                <label for="login_password">Password:</label>
+                <input type="password" id="login_password" name="password" required>
+                
+                <button type="submit" name="login">Login</button>
+            </form>
+        </div>
 
-        <h3>Change Password</h3>
-        <form method="POST" action="">
-            <label for="username">Username:</label>
-            <input type="text" name="username" required>
-            <br>
-            <label for="new_password">New Password:</label>
-            <input type="password" name="new_password" required>
-            <br>
-            <input type="submit" name="change_password" value="Change Password">
-        </form>
-
+        
         <div class="links">
             <a href="register.php">Don't have an account? Sign up</a>
+            <a href="change_password.php">Forgot Password? Change Password</a>
         </div>
     </div>
+
+    <script>
+        // Form validation for login form
+        const loginForm = document.querySelectorAll('form')[0];
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                const username = document.getElementById('login_username').value.trim();
+                const password = document.getElementById('login_password').value.trim();
+                
+                if (username === '') {
+                    alert('Please enter your username.');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                if (password === '') {
+                    alert('Please enter your password.');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+        
+    </script>
 </body>
 </html>

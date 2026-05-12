@@ -7,15 +7,34 @@ $result = $conn->query("SELECT * FROM students WHERE id = $student_id");
 $student = $result->fetch_assoc();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
+    $name = trim($_POST['name']);
     $class_id = $_POST['class_id'];
 
-    $stmt = $conn->prepare("UPDATE students SET name=?, class_id=? WHERE id=?");
-    $stmt->bind_param("sii", $name, $class_id, $student_id);
-    $stmt->execute();
-    $stmt->close();
+    // Validate inputs
+    if (empty($name)) {
+        $error_message = "Student name is required.";
+    } elseif (empty($class_id)) {
+        $error_message = "Class selection is required.";
+    } else {
+        // Check if class exists in database
+        $class_check_sql = "SELECT id FROM classes WHERE id = ?";
+        $class_check_stmt = $conn->prepare($class_check_sql);
+        $class_check_stmt->bind_param("i", $class_id);
+        $class_check_stmt->execute();
+        $class_result = $class_check_stmt->get_result();
+        
+        if ($class_result->num_rows === 0) {
+            $error_message = "Selected class does not exist. Please select a valid class.";
+        } else {
+            $stmt = $conn->prepare("UPDATE students SET name=?, class_id=? WHERE id=?");
+            $stmt->bind_param("sii", $name, $class_id, $student_id);
+            $stmt->execute();
+            $stmt->close();
 
-    header("Location: manage_students.php");
+            header("Location: manage_students.php");
+        }
+        $class_check_stmt->close();
+    }
 }
 ?>
 
@@ -27,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <h1>Edit Student</h1>
+    <?php if (!empty($error_message)): ?>
+        <div class="message error"><?= htmlspecialchars($error_message); ?></div>
+    <?php endif; ?>
     <form method="POST" action="">
         <input type="text" name="name" value="<?= $student['name']; ?>" required>
         <select name="class_id">

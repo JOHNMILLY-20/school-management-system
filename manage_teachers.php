@@ -53,7 +53,12 @@ if ($class_result === FALSE) {
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+            background-image: url('images/background2.png'); 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
         }
         form div {
             margin-bottom: 10px;

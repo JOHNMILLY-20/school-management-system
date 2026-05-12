@@ -8,6 +8,10 @@
             font-family: Arial, sans-serif;
             padding: 20px;
             background-color: #f4f4f4;
+            background-image: url('images/background2.png'); 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
         }
         h1 {
             color: #5cb85c;

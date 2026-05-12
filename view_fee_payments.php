@@ -6,13 +6,12 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php'); // Redirect to login if not logged in or not an admin
     exit();
 }
-// Fetch all fee payments
+// Fetch all fee payments (using fees table instead of payments)
 $payments = [];
-$sql = "SELECT p.id AS payment_id, p.amount, p.payment_date, p.method, s.name AS student_name, i.amount AS invoice_amount, i.due_date 
-        FROM payments p 
-        JOIN invoices i ON p.invoice_id = i.id 
-        JOIN students s ON i.student_id = s.id 
-        ORDER BY p.payment_date DESC";
+$sql = "SELECT f.id AS payment_id, f.amount, f.paid_date AS payment_date, 'manual' AS method, s.name AS student_name, f.amount AS invoice_amount, 'N/A' AS due_date 
+        FROM fees f 
+        JOIN students s ON f.student_id = s.id 
+        ORDER BY f.paid_date DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->execute();
@@ -35,9 +34,12 @@ $stmt->close();
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
             padding: 20px;
+            background-color: #f4f4f4;
+            background-image: url('images/background2.png'); 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
         }
         h1 {
             text-align: center;
